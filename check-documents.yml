@@ -1,0 +1,16 @@
+name: Check Expiring Documents
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Runs at 8 AM daily
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call check endpoint
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://supreme-fishstick-p594qwgw99rh9ppx-3000.app.github.dev/api/cron/check-expiring-documents

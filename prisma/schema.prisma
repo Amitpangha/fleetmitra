@@ -8,71 +8,166 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   password      String
   name          String?
   companyName   String?
   phone         String?
-  role          String    @default("OWNER")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  vehicles      Vehicle[]
-  trips         Trip[]
+  role          String         @default("OWNER")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  documents     Document[]
+  drivers       Driver[]
   expenses      Expense[]
+  notifications Notification[]
+  trips         Trip[]
+  settings      UserSettings?
+  vehicles      Vehicle[]
+}
+
+model UserSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  language      String   @default("en")
+  theme         String   @default("light")
+  notifications Boolean  @default(true)
+  emailAlerts   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model Vehicle {
-  id            String    @id @default(cuid())
-  registration  String    @unique
-  type          String
-  model         String
-  capacity      Float
-  status        String    @default("ACTIVE")
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  
-  // Add these relation fields
-  trips         Trip[]    // This was missing
-  expenses      Expense[] // This was missing
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String     @id @default(cuid())
+  registration    String     @unique
+  type            String
+  model           String
+  capacity        Float
+  status          String     @default("ACTIVE")
+  userId          String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  fitnessExpiry   DateTime?
+  fuelType        String?    @default("Diesel")
+  imageUrl        String?
+  insuranceExpiry DateTime?
+  lastServiceDate DateTime?
+  make            String?
+  nextServiceDue  Int?
+  permitExpiry    DateTime?
+  year            Int?
+  documents       Document[]
+  expenses        Expense[]
+  trips           Trip[]
+  user            User       @relation(fields: [userId], references: [id])
+}
+
+model Driver {
+  id               String     @id @default(cuid())
+  name             String
+  phone            String     @unique
+  email            String?
+  licenseNumber    String     @unique
+  licenseExpiry    DateTime?
+  experience       Int?
+  rating           Float?     @default(0)
+  status           String     @default("AVAILABLE")
+  emergencyContact String?
+  bloodGroup       String?
+  userId           String
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  documents        Document[]
+  user             User       @relation(fields: [userId], references: [id])
+  expenses         Expense[]
+  trips            Trip[]
 }
 
 model Trip {
-  id            String    @id @default(cuid())
-  from          String
-  to            String
-  status        String    @default("PLANNED")
+  id            String     @id @default(cuid())
+  status        String     @default("PLANNED")
   userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  
-  vehicleId     String?
-  vehicle       Vehicle?  @relation(fields: [vehicleId], references: [id])
-  
-  // Add this relation field
-  expenses      Expense[] // This was missing
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  vehicleId     String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  advanceAmount Float?     @default(0)
+  balanceAmount Float?
+  distance      Float?
+  driverId      String?
+  endDate       DateTime?
+  freightAmount Float?
+  fromLocation  String
+  loadType      String
+  loadValue     Float?
+  loadWeight    Float
+  notes         String?
+  paymentStatus String     @default("PENDING")
+  priority      String     @default("NORMAL")
+  startDate     DateTime
+  toLocation    String
+  tripNumber    String     @unique
+  documents     Document[]
+  expenses      Expense[]
+  driver        Driver?    @relation(fields: [driverId], references: [id])
+  user          User       @relation(fields: [userId], references: [id])
+  vehicle       Vehicle    @relation(fields: [vehicleId], references: [id])
 }
 
 model Expense {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   amount        Float
   description   String?
   type          String
-  date          DateTime  @default(now())
+  date          DateTime
   userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  
   vehicleId     String?
-  vehicle       Vehicle?  @relation(fields: [vehicleId], references: [id])
-  
   tripId        String?
-  trip          Trip?     @relation(fields: [tripId], references: [id])
-  
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
+  driverId      String?
+  notes         String?
+  paymentMethod String?
+  receiptUrl    String?
+  updatedAt     DateTime @updatedAt
+  driver        Driver?  @relation(fields: [driverId], references: [id])
+  trip          Trip?    @relation(fields: [tripId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+  vehicle       Vehicle? @relation(fields: [vehicleId], references: [id])
+}
+
+model Document {
+  id             String   @id @default(cuid())
+  type           String
+  documentNumber String
+  issuedDate     DateTime
+  expiryDate     DateTime
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  mimeType       String?
+  status         String   @default("VALID")
+  vehicleId      String?
+  tripId         String?
+  driverId       String?
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  driver         Driver?  @relation(fields: [driverId], references: [id])
+  trip           Trip?    @relation(fields: [tripId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+  vehicle        Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  @@index([expiryDate])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }

@@ -1,26 +1,41 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import { Providers } from "./providers"
+import { Inter, Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
+import { getServerSession } from "next-auth"
+import SessionProvider from "@/components/SessionProvider"
+import { authOptions } from "@/lib/auth"
+import { ThemeProvider } from "@/components/ThemeProvider"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter',
+})
+
+const plusJakarta = Plus_Jakarta_Sans({ 
+  subsets: ["latin"],
+  variable: '--font-plus-jakarta',
+})
 
 export const metadata: Metadata = {
-  title: "FleetMitra - Transport Management",
-  description: "Manage your fleet efficiently",
+  title: "FleetMitra - Enterprise Fleet Management Platform",
+  description: "Transform your fleet operations with AI-powered insights, real-time tracking, and automated compliance.",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getServerSession(authOptions)
+
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Providers>
-          {children}
-        </Providers>
+    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+        <ThemeProvider>
+          <SessionProvider session={session}>
+            {children}
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

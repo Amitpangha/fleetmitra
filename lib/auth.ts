@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth"
-import { prisma } from "./prisma"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          throw new Error("Invalid credentials")
         }
 
         const user = await prisma.user.findUnique({
@@ -21,27 +21,49 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user || !user.password) {
-          return null
+          throw new Error("Invalid credentials")
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password)
+        const isCorrectPassword = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
 
-        if (!isValid) {
-          return null
+        if (!isCorrectPassword) {
+          throw new Error("Invalid credentials")
         }
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role
         }
       }
     })
   ],
-  session: {
-    strategy: "jwt"
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.role = user.role
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string
+        session.user.role = token.role as string
+      }
+      return session
+    }
   },
   pages: {
     signIn: "/login",
+    error: "/login"
   },
+  session: {
+    strategy: "jwt"
+  },
+  secret: process.env.NEXTAUTH_SECRET
 }
