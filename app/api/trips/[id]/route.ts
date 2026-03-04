@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+
+// CORRECT type for Next.js 15
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,25 +18,47 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
+
     const trip = await prisma.trip.findFirst({
-      where: { id: params.id, userId: session.user.id },
-      include: { vehicle: true, driver: true, expenses: true }
+      where: {
+        id: id,
+        userId: session.user.id
+      },
+      include: {
+        vehicle: true,
+        driver: true,
+        expenses: {
+          orderBy: {
+            date: 'desc'
+          }
+        }
+      }
     })
 
     if (!trip) {
       return NextResponse.json({ error: "Trip not found" }, { status: 404 })
     }
 
+    // Calculate balance amount
     const balanceAmount = (trip.freightAmount || 0) - (trip.advanceAmount || 0)
-    return NextResponse.json({ ...trip, balanceAmount })
+
+    return NextResponse.json({
+      ...trip,
+      balanceAmount
+    })
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch trip" }, { status: 500 })
+    console.error("Error fetching trip:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch trip" },
+      { status: 500 }
+    )
   }
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -39,42 +66,51 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
     const body = await request.json()
-    
-    const data: any = {
-      fromLocation: body.fromLocation,
-      toLocation: body.toLocation,
-      startDate: new Date(body.startDate),
-      loadType: body.loadType,
-      loadWeight: parseFloat(body.loadWeight),
-    }
-    
-    if (body.endDate) data.endDate = new Date(body.endDate)
-    if (body.vehicleId) data.vehicleId = body.vehicleId
-    if (body.driverId) data.driverId = body.driverId
-    if (body.distance) data.distance = parseFloat(body.distance)
-    if (body.freightAmount) data.freightAmount = parseFloat(body.freightAmount)
-    if (body.advanceAmount) data.advanceAmount = parseFloat(body.advanceAmount)
-    if (body.loadValue) data.loadValue = parseFloat(body.loadValue)
-    if (body.notes) data.notes = body.notes
-    if (body.priority) data.priority = body.priority
-    if (body.status) data.status = body.status
-    if (body.paymentStatus) data.paymentStatus = body.paymentStatus
 
     const trip = await prisma.trip.update({
-      where: { id: params.id, userId: session.user.id },
-      data
+      where: {
+        id: id,
+        userId: session.user.id
+      },
+      data: {
+        fromLocation: body.fromLocation,
+        toLocation: body.toLocation,
+        startDate: new Date(body.startDate),
+        loadType: body.loadType,
+        loadWeight: parseFloat(body.loadWeight),
+        endDate: body.endDate ? new Date(body.endDate) : null,
+        vehicleId: body.vehicleId || null,
+        driverId: body.driverId || null,
+        distance: body.distance ? parseFloat(body.distance) : null,
+        freightAmount: body.freightAmount ? parseFloat(body.freightAmount) : null,
+        advanceAmount: body.advanceAmount ? parseFloat(body.advanceAmount) : null,
+        loadValue: body.loadValue ? parseFloat(body.loadValue) : null,
+        notes: body.notes,
+        priority: body.priority,
+        status: body.status,
+        paymentStatus: body.paymentStatus,
+      },
+      include: {
+        vehicle: true,
+        driver: true
+      }
     })
 
     return NextResponse.json(trip)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update trip" }, { status: 500 })
+    console.error("Error updating trip:", error)
+    return NextResponse.json(
+      { error: "Failed to update trip" },
+      { status: 500 }
+    )
   }
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -82,10 +118,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
     const body = await request.json()
-    
+
     const trip = await prisma.trip.update({
-      where: { id: params.id, userId: session.user.id },
+      where: {
+        id: id,
+        userId: session.user.id
+      },
       data: {
         status: body.status,
         ...(body.status === 'COMPLETED' ? { endDate: new Date() } : {})
@@ -94,13 +134,17 @@ export async function PATCH(
 
     return NextResponse.json(trip)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update trip status" }, { status: 500 })
+    console.error("Error updating trip status:", error)
+    return NextResponse.json(
+      { error: "Failed to update trip status" },
+      { status: 500 }
+    )
   }
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -108,12 +152,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
+
     await prisma.trip.delete({
-      where: { id: params.id, userId: session.user.id }
+      where: {
+        id: id,
+        userId: session.user.id
+      }
     })
 
     return NextResponse.json({ message: "Trip deleted successfully" })
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete trip" }, { status: 500 })
+    console.error("Error deleting trip:", error)
+    return NextResponse.json(
+      { error: "Failed to delete trip" },
+      { status: 500 }
+    )
   }
 }
