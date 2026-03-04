@@ -3,31 +3,35 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 
-// Correct type for Next.js 15
-type RouteParams = {
+type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: RouteParams
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
+
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = await params
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { id } = await context.params
 
     const document = await prisma.document.findFirst({
-      where: { 
-        id: id, 
-        userId: session.user.id 
+      where: {
+        id: id,
+        userId: (session.user as any).id,  // ✅ Use type assertion
       },
-      include: { 
-        vehicle: true, 
-        driver: true 
+      include: {
+        vehicle: true,
+        driver: true
       }
     })
 
@@ -42,54 +46,77 @@ export async function GET(
   }
 }
 
-export async function PATCH(
+// Apply the same pattern to PATCH and DELETE methods
+
+export async function PUT(
   request: NextRequest,
-  { params }: RouteParams
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = await params
+    const { id } = await context.params
     const body = await request.json()
     
-    const document = await prisma.document.update({
+    const driver = await prisma.driver.update({
       where: { 
         id: id, 
-        userId: session.user.id 
+        userId: (session.user as any).id 
       },
-      data: { status: body.status }
+      data: {
+        name: body.name,
+        phone: body.phone,
+        email: body.email,
+        licenseNumber: body.licenseNumber,
+        licenseExpiry: body.licenseExpiry ? new Date(body.licenseExpiry) : null,
+        experience: body.experience ? parseInt(body.experience) : null,
+        rating: body.rating ? parseFloat(body.rating) : null,
+        status: body.status,
+        emergencyContact: body.emergencyContact,
+        bloodGroup: body.bloodGroup,
+      }
     })
 
-    return NextResponse.json(document)
+    return NextResponse.json(driver)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update document" }, { status: 500 })
+    console.error("Error updating driver:", error)
+    return NextResponse.json({ error: "Failed to update driver" }, { status: 500 })
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: RouteParams
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = await params
+    const { id } = await context.params
 
-    await prisma.document.delete({
+    await prisma.driver.delete({
       where: { 
         id: id, 
-        userId: session.user.id 
+        userId: (session.user as any).id 
       }
     })
 
-    return NextResponse.json({ message: "Document deleted successfully" })
+    return NextResponse.json({ message: "Driver deleted successfully" })
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete document" }, { status: 500 })
+    console.error("Error deleting driver:", error)
+    return NextResponse.json({ error: "Failed to delete driver" }, { status: 500 })
   }
 }
