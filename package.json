@@ -5,10 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma generate && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "next lint",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -36,7 +35,7 @@
     "clsx": "^2.1.1",
     "date-fns": "3.6.0",
     "lucide-react": "^0.469.0",
-    "next": "15.1.7",
+    "next": "15.1.9",
     "next-auth": "^4.24.10",
     "nodemailer": "^7.0.0",
     "react": "^18.3.1",
