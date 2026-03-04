@@ -6,7 +6,11 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
+n    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -16,7 +20,10 @@ export async function GET(request: Request) {
     const type = searchParams.get('type')
     const status = searchParams.get('status')
 
-    const where: any = { userId: session.user.id }
+    const where: any = { 
+      userId: (session.user as any).id  // ✅ Use type assertion
+    }
+    
     if (vehicleId) where.vehicleId = vehicleId
     if (driverId) where.driverId = driverId
     if (type && type !== 'ALL') where.type = type
@@ -41,7 +48,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
+n    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -49,7 +60,7 @@ export async function POST(request: Request) {
     
     const document = await prisma.document.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,  // ✅ Use type assertion
         type: body.type,
         documentNumber: body.documentNumber,
         issuedDate: new Date(body.issuedDate),
