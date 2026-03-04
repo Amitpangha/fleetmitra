@@ -45,7 +45,6 @@ export default function Navigation() {
     { href: "/dashboard/trips", label: "Trips", icon: "🗺️" },
     { href: "/dashboard/expenses", label: "Expenses", icon: "💰" },
     { href: "/dashboard/documents", label: "Documents", icon: "📄" },
-    { href: "/dashboard/reports", label: "Reports", icon: "📊" },
   ]
 
   const isActive = (href: string) => {
