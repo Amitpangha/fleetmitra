@@ -14,6 +14,9 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions)
+n    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -23,7 +26,7 @@ export async function GET(
     const driver = await prisma.driver.findFirst({
       where: { 
         id: id, 
-        userId: session.user.id 
+        userId: (session.user as any).id 
       },
       include: { 
         trips: { 
@@ -50,6 +53,9 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions)
+n    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -60,7 +66,7 @@ export async function PUT(
     const driver = await prisma.driver.update({
       where: { 
         id: id, 
-        userId: session.user.id 
+        userId: (session.user as any).id 
       },
       data: {
         name: body.name,
@@ -89,6 +95,9 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions)
+n    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -98,7 +107,7 @@ export async function DELETE(
     await prisma.driver.delete({
       where: { 
         id: id, 
-        userId: session.user.id 
+        userId: (session.user as any).id 
       }
     })
 
