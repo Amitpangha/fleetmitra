@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { sendEmail, emailTemplates } from "@/lib/email"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 // This endpoint should be called by a cron job (e.g., GitHub Actions, Vercel Cron, etc.)
-export async function GET() {
+export async function GET(request: NextRequest) {  // ✅ Add the request parameter
   try {
     // Verify cron secret to prevent unauthorized access
     const authHeader = request.headers.get('authorization')
