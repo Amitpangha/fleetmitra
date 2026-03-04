@@ -6,12 +6,11 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
+
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const period = searchParams.get('period') || 'month' // week, month, quarter, year
     const userId = session.user.id
 
     const now = new Date()
