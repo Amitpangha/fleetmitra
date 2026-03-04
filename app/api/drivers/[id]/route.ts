@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+
+// CORRECT type for Next.js 15
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,9 +18,19 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
+
     const driver = await prisma.driver.findFirst({
-      where: { id: params.id, userId: session.user.id },
-      include: { trips: { orderBy: { startDate: 'desc' }, take: 10 } }
+      where: { 
+        id: id, 
+        userId: session.user.id 
+      },
+      include: { 
+        trips: { 
+          orderBy: { startDate: 'desc' },
+          take: 10 
+        } 
+      }
     })
 
     if (!driver) {
@@ -24,13 +39,14 @@ export async function GET(
 
     return NextResponse.json(driver)
   } catch (error) {
+    console.error("Error fetching driver:", error)
     return NextResponse.json({ error: "Failed to fetch driver" }, { status: 500 })
   }
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -38,35 +54,38 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
     const body = await request.json()
     
-    const data: any = {
-      name: body.name,
-      phone: body.phone,
-      licenseNumber: body.licenseNumber,
-      email: body.email,
-      licenseExpiry: body.licenseExpiry ? new Date(body.licenseExpiry) : null,
-      experience: body.experience ? parseInt(body.experience) : null,
-      rating: body.rating ? parseFloat(body.rating) : null,
-      status: body.status,
-      emergencyContact: body.emergencyContact,
-      bloodGroup: body.bloodGroup,
-    }
-
     const driver = await prisma.driver.update({
-      where: { id: params.id, userId: session.user.id },
-      data
+      where: { 
+        id: id, 
+        userId: session.user.id 
+      },
+      data: {
+        name: body.name,
+        phone: body.phone,
+        email: body.email,
+        licenseNumber: body.licenseNumber,
+        licenseExpiry: body.licenseExpiry ? new Date(body.licenseExpiry) : null,
+        experience: body.experience ? parseInt(body.experience) : null,
+        rating: body.rating ? parseFloat(body.rating) : null,
+        status: body.status,
+        emergencyContact: body.emergencyContact,
+        bloodGroup: body.bloodGroup,
+      }
     })
 
     return NextResponse.json(driver)
   } catch (error) {
+    console.error("Error updating driver:", error)
     return NextResponse.json({ error: "Failed to update driver" }, { status: 500 })
   }
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -74,12 +93,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await context.params
+
     await prisma.driver.delete({
-      where: { id: params.id, userId: session.user.id }
+      where: { 
+        id: id, 
+        userId: session.user.id 
+      }
     })
 
     return NextResponse.json({ message: "Driver deleted successfully" })
   } catch (error) {
+    console.error("Error deleting driver:", error)
     return NextResponse.json({ error: "Failed to delete driver" }, { status: 500 })
   }
 }
