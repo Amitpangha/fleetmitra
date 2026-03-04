@@ -12,17 +12,21 @@ export async function GET(request: Request) {
     }
 
     const userId = (session.user as any).id
+    const { searchParams } = new URL(request.url)
+    const period = searchParams.get('period') || 'month'  // ✅ Make sure this line exists
 
     const now = new Date()
     let startDate: Date
     let previousStartDate: Date
 
     // Calculate date ranges based on period
-    switch(period) {
+    switch(period) {  // This should work if period is defined above
       case 'week':
         startDate = new Date(now.setDate(now.getDate() - 7))
         previousStartDate = new Date(now.setDate(now.getDate() - 14))
         break
+      // ... rest of cases
+   
       case 'month':
         startDate = new Date(now.setMonth(now.getMonth() - 1))
         previousStartDate = new Date(now.setMonth(now.getMonth() - 2))
