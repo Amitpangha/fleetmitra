@@ -301,14 +301,14 @@ export default function AnalyticsPage() {
                     ticks: {
                       color: colors.textColor,
                       callback: (value) => `₹${(Number(value) / 1000).toFixed(0)}k`,
-                      font: { weight: '500' }
+                      font: { weight: 500 }
                     }
                   },
                   x: {
                     grid: { display: false },
                     ticks: { 
                       color: colors.textColor,
-                      font: { weight: '500' }
+                      font: { weight: 500 }
                     }
                   }
                 },
@@ -331,7 +331,7 @@ export default function AnalyticsPage() {
                     position: 'bottom',
                     labels: { 
                       color: colors.textColor,
-                      font: { weight: '500', size: 12 }
+                      font: { weight: 500, size: 12 }
                     }
                   },
                   tooltip: {
@@ -376,14 +376,14 @@ export default function AnalyticsPage() {
                       ticks: {
                         callback: (value) => `${value}%`,
                         color: colors.textColor,
-                        font: { weight: '500' }
+                        font: { weight: 500 }
                       }
                     },
                     x: {
                       grid: { display: false },
                       ticks: { 
                         color: colors.textColor,
-                        font: { weight: '500' }
+                        font: { weight: 500 }
                       }
                     }
                   },

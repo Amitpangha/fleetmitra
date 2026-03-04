@@ -15,7 +15,15 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     })
     return NextResponse.json(drivers)
-  } catch (error) {
+  } catch (error: any) {
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: "Driver with this phone or license already exists" },
+          { status: 409 }
+        )
+      }
+    }
     return NextResponse.json({ error: "Failed to fetch drivers" }, { status: 500 })
   }
 }
@@ -46,7 +54,15 @@ export async function POST(request: Request) {
 
     const driver = await prisma.driver.create({ data })
     return NextResponse.json(driver, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
+    if (error && typeof error === "object" && "code" in error) {
+       if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: "Driver with this phone or license already exists" }, 
+        { status: 409 }
+      )
+    }
+    }
     if (error.code === 'P2002') {
       return NextResponse.json({ error: "Driver with this phone or license already exists" }, { status: 409 })
     }

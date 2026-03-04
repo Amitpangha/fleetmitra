@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { UploadButton } from "@uploadthing/react"
-import { OurFileRouter } from "@/app/api/uploadthing/core"
+import type { OurFileRouter } from "@/app/api/uploadthing/core"  // ✅ Only this one
 
 interface Vehicle {
   id: string
@@ -222,7 +222,7 @@ export default function NewDocumentPage() {
               
               {!uploadedFile ? (
                 <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-400 transition-all bg-slate-50/50">
-                  <UploadButton<OurFileRouter>
+                  <UploadButton<OurFileRouter, "documentUploader">
                     endpoint="documentUploader"
                     onUploadBegin={() => {
                       setIsUploading(true)
